@@ -1,0 +1,22 @@
+sudo: required
+services: 
+  - docker
+
+before_install:
+  - docker build -t smuddu/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true smuddu/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t smuddu/multi-client ./client
+  - docker build -t smuddu/multi-nginx ./nginx
+  - docker build -t smuddu/multi-server ./server
+  - docker build -t smuddu/multi-worker ./worker
+  # Log in to the docker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to the docker hub
+  - docker push smuddu/multi-client
+  - docker push smuddu/multi-nginx
+  - docker push smuddu/multi-server
+  - docker push smuddu/multi-worker
